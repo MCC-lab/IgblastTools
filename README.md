@@ -6,7 +6,7 @@ Scripts to streamline Ig Blast operations after. These scripts were designed and
 
 See the HOWTO text file on how to use these scripts
 
--SangerCurator.py
+-SangerCuratorV0.py
 Simple python script to find continuous segments of nucleotides in a sequence that have a PHRED score >=20.
 
 
