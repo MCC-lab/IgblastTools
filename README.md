@@ -1,4 +1,7 @@
 # IgblastTools
+
+Edited by Cees van der Poel 12OCT19, Carroll lab, PCMM
+
 Scripts to streamline Ig Blast operations after. These scripts were designed and tested on Mac. They were desgined to handle mouse V(D)J sequences obtained through sanger sequencing of single B cell cDNA.
 
 See the HOWTO text file on how to use these scripts
