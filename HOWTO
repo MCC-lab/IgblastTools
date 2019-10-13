@@ -1,0 +1,57 @@
+Protocol BCR seq analysis Cees van der Poel 12OCT19 Carroll lab PCMM
+
+Uses custom sanger curator program (by CE van der Poel) and Igblast submission and parsing programs (by Charles Macaulay)
+Use to analyze sanger sequences (VDJ analysis, SHM etc)
+
+Step 1: Curate the sanger sequencing files
+-download .seq (fasta from PHRED output, NOT text from sequencer output! Otherwise they won’t contain a fasta header) .qual and chromatogram files from sequencing core.
+-make a directory (in root or similar, no spaces in foldernames) containing ONLY the .seq and .qual files from the same run.
+-run SimpleSangerCuratorV0 (typically run it from pycharm)
+This program uses the files in the folder made in the step above. The qual files are used to curate the .seq files. If the associated .seq file passes curation it is copied to a “curated_sequences” sub folder that is automatically generated.
+-Give the location of the files when asked
+-input the minimum continuous length of bp you expect with a score higher or equal than 20 (=phred score number). (~200-400 for a IgH sequence, typically I use 200 that will filter out most of the bad ones).
+-the program will report on the sequences selected
+-you can find the curated sequences in the automatically generated subfolder “curated_sequences”
+
+Step 2: Prepare the sequences for Igblast
+Before being able to run the sequences through igblast, first the msVHE primer (=reverse sequencing primer) needs to be removed. This is done with a program called FASTXclipper from the fastx toolbox (available online). For it to work the .seq files need to be in a certain format (single line FASTA). So in this part the sequences are modified as follows: convert to singleline fasta  (.singleline.fa) -> clip of msVHE (.singleline.clipped.fa) ->reverse complement (.singleline.clipped.revcomp.fa)
+-make a new folder under Pipelines/single_cell_igblast/curated_sequences/ and put your curated .seq files (see step 1) in this folder.
+NB your computer must have python installed as well as the biopython library
+-run the first script to process the sequences:
+	In terminal go to:
+USER/Pipelines/single_cell_igblast/src
+
+run the program with the command:
+python sequence_revisions_tightclip_CEP.py YOURFOLDERNAME
+
+the program should return to prompt without errors. In the folder there should be a faseqs folder now filled with the curated files. You should also find YOURFOFLDERNAME now in the following folders:
+USER/Pipelines/single_cell_igblast/preprocessing/single_line/
+USER/Pipelines/single_cell_igblast/preprocessing/clipped/
+USER/Pipelines/single_cell_igblast/preprocessing/rev_comps/
+
+each of these folders contain sequences at various steps of the preprocessing. The folders in the /rev_comps/ will be used for the igblast analysis in the next step.
+NB by default the program assumes that you want to clip of the (partial) msVHE which is “CCAGACTCC”. Since msVHE is at the end of the read where it is a little noisy, we only look for a partial match. A full msVHE match is too stringent. You can force your own sequence to be clipped (for instance when you want to process kappa sequences that won’t have msVHE) by adding it as an additional parameter behind the input folder for example:
+python sequence_revisions_tightclip_CEP.py YOURFOLDERNAME ATGATGATGTAGA
+
+Step 3: run the sequences through igBlast (igblast query)
+in terminal, still in src folder run:
+python run_igblastn_IMGTdom_CEP.py YOURFOLDERNAME
+
+The python program will submit each .singleline.clipped.revcomp.fa file to igblast using the local NCBI and IGMT databases (it will run both separately).
+The query output (one file per input) will appear in 
+
+USER/Pipelines/single_cell_igblast/igblast_query_outputs/NCBI
+and
+USER/Pipelines/single_cell_igblast/igblast_query_outputs/IMGT
+
+Step3: parse the outputs to a single, readable table.
+This will generate a table that is easily opened in Excel. It also does some alignments to figure out CDR3 length, charge and aminoacid mutations. You will get a biopython error about a partial codon but that is normal. Other errors may indicate that biopython was not installed properly.
+Still in terminal, src folder:
+python parse_blast.py NCBI YOURFOLDERNAME
+or for IMGT as reference database
+python parse_blast.py IMGT YOURFOLDERNAME
+
+Step4: done! Analyze in excel for VH usage etc.
+Go to:
+USER/Pipelines/single_cell_igblast/parsed_igblast_query_outputs
+you’ll find YOURFOLDERNAME as subfolder with a textfile that contains a table with all the useful data. Recommend using pivot tables in excel to count VH usage.
